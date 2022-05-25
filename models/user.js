@@ -18,11 +18,12 @@ class User {
 		last_name,
 		phone,
 	}) {
-		if (!username || !password || !first_name || !last_name || !phone)
+		if (!username || !password || !first_name || !last_name || !phone) {
 			throw new ExpressError(
 				"Username, password, first_name, last_name, and phone must be included to register!",
 				400
 			);
+		}
 		const joinDate = new Date();
 		const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 		const results = await db.query(
@@ -46,7 +47,22 @@ class User {
 
 	/** Authenticate: is this username/password valid? Returns boolean. */
 
-	static async authenticate(username, password) {}
+	static async authenticate(username, password) {
+		if (!username || !password) {
+			throw new ExpressError("Username and password required", 400);
+		}
+		const results = await db.query(
+			`SELECT password 
+    FROM users 
+    WHERE username=$1`,
+			[username]
+		);
+		const user = results.rows[0];
+		if (user) {
+			return await bcrypt.compare(password, user.password);
+		}
+		throw new ExpressError("Could not find user with that username.", 400);
+	}
 
 	/** Update last_login_at for user */
 

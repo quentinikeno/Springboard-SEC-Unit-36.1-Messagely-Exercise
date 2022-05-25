@@ -1,61 +1,92 @@
 /** User class for message.ly */
-
-
+const bcrypt = require("bcrypt");
+const ExpressError = require("../expressError");
+const db = require("../db");
+const { BCRYPT_WORK_FACTOR } = require("../config");
 
 /** User of the site. */
 
 class User {
+	/** register new user -- returns
+	 *    {username, password, first_name, last_name, phone}
+	 */
 
-  /** register new user -- returns
-   *    {username, password, first_name, last_name, phone}
-   */
+	static async register({
+		username,
+		password,
+		first_name,
+		last_name,
+		phone,
+	}) {
+		if (!username || !password || !first_name || !last_name || !phone)
+			throw new ExpressError(
+				"Username, password, first_name, last_name, and phone must be included to register!",
+				400
+			);
+		const joinDate = new Date();
+		const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
+		const results = await db.query(
+			`INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING username, first_name, last_name, phone`,
+			[
+				username,
+				hashedPassword,
+				first_name,
+				last_name,
+				phone,
+				joinDate,
+				joinDate,
+			]
+		);
+		const json = results.rows[0];
+		json.password = password;
+		return json;
+	}
 
-  static async register({username, password, first_name, last_name, phone}) { }
+	/** Authenticate: is this username/password valid? Returns boolean. */
 
-  /** Authenticate: is this username/password valid? Returns boolean. */
+	static async authenticate(username, password) {}
 
-  static async authenticate(username, password) { }
+	/** Update last_login_at for user */
 
-  /** Update last_login_at for user */
+	static async updateLoginTimestamp(username) {}
 
-  static async updateLoginTimestamp(username) { }
+	/** All: basic info on all users:
+	 * [{username, first_name, last_name, phone}, ...] */
 
-  /** All: basic info on all users:
-   * [{username, first_name, last_name, phone}, ...] */
+	static async all() {}
 
-  static async all() { }
+	/** Get: get user by username
+	 *
+	 * returns {username,
+	 *          first_name,
+	 *          last_name,
+	 *          phone,
+	 *          join_at,
+	 *          last_login_at } */
 
-  /** Get: get user by username
-   *
-   * returns {username,
-   *          first_name,
-   *          last_name,
-   *          phone,
-   *          join_at,
-   *          last_login_at } */
+	static async get(username) {}
 
-  static async get(username) { }
+	/** Return messages from this user.
+	 *
+	 * [{id, to_user, body, sent_at, read_at}]
+	 *
+	 * where to_user is
+	 *   {username, first_name, last_name, phone}
+	 */
 
-  /** Return messages from this user.
-   *
-   * [{id, to_user, body, sent_at, read_at}]
-   *
-   * where to_user is
-   *   {username, first_name, last_name, phone}
-   */
+	static async messagesFrom(username) {}
 
-  static async messagesFrom(username) { }
+	/** Return messages to this user.
+	 *
+	 * [{id, from_user, body, sent_at, read_at}]
+	 *
+	 * where from_user is
+	 *   {username, first_name, last_name, phone}
+	 */
 
-  /** Return messages to this user.
-   *
-   * [{id, from_user, body, sent_at, read_at}]
-   *
-   * where from_user is
-   *   {username, first_name, last_name, phone}
-   */
-
-  static async messagesTo(username) { }
+	static async messagesTo(username) {}
 }
-
 
 module.exports = User;

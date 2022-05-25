@@ -68,13 +68,15 @@ class User {
 
 	static async updateLoginTimestamp(username) {
 		const last_login_at = new Date();
-		await db.query(
+		const results = await db.query(
 			`
     UPDATE users
     SET last_login_at=$1
-    WHERE username=$2`,
+    WHERE username=$2
+    RETURNING last_login_at`,
 			[last_login_at, username]
 		);
+		this.checkForUser(results);
 	}
 
 	/** All: basic info on all users:
@@ -108,9 +110,7 @@ class User {
     `,
 			[username]
 		);
-		if (results.rows.length === 0) {
-			throw new ExpressError("No user with that username found", 400);
-		}
+		this.checkForUser(results);
 		return results.rows[0];
 	}
 
@@ -133,6 +133,7 @@ class User {
       WHERE u.username = $1`,
 			[username]
 		);
+		this.checkForUser(results);
 		const messages = results.rows.map((m) => {
 			const {
 				id,
@@ -174,6 +175,7 @@ class User {
       WHERE tu.username = $1`,
 			[username]
 		);
+		this.checkForUser(results);
 		const messages = results.rows.map((m) => {
 			const {
 				id,
@@ -194,6 +196,12 @@ class User {
 			};
 		});
 		return messages;
+	}
+
+	static checkForUser(results) {
+		if (results.rows.length === 0) {
+			throw new ExpressError("No user with that username found", 400);
+		}
 	}
 }
 

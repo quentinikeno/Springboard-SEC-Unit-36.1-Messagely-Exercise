@@ -163,7 +163,38 @@ class User {
 	 *   {username, first_name, last_name, phone}
 	 */
 
-	static async messagesTo(username) {}
+	static async messagesTo(username) {
+		const results = await db.query(
+			`SELECT m.id, fu.username, fu.first_name, fu.last_name, fu.phone, m.body, m.sent_at, m.read_at
+      FROM users as tu
+      JOIN messages AS m
+      ON m.to_username = tu.username
+      JOIN users AS fu
+      ON m.from_username = fu.username
+      WHERE tu.username = $1`,
+			[username]
+		);
+		const messages = results.rows.map((m) => {
+			const {
+				id,
+				username,
+				first_name,
+				last_name,
+				phone,
+				body,
+				sent_at,
+				read_at,
+			} = m;
+			return {
+				id,
+				from_user: { username, first_name, last_name, phone },
+				body,
+				sent_at,
+				read_at,
+			};
+		});
+		return messages;
+	}
 }
 
 module.exports = User;

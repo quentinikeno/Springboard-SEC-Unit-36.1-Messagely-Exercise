@@ -1,16 +1,28 @@
+const express = require("express");
+const User = require("../models/user");
+
+const router = new express.Router();
+
 /** GET / - get list of users.
  *
  * => {users: [{username, first_name, last_name, phone}, ...]}
  *
  **/
 
+router.get("/", async (req, res, next) => {
+	try {
+		const users = await User.all();
+		return res.json(users);
+	} catch (error) {
+		return next(error);
+	}
+});
 
 /** GET /:username - get detail of users.
  *
  * => {user: {username, first_name, last_name, phone, join_at, last_login_at}}
  *
  **/
-
 
 /** GET /:username/to - get messages to user
  *
@@ -22,7 +34,6 @@
  *
  **/
 
-
 /** GET /:username/from - get messages from user
  *
  * => {messages: [{id,
@@ -32,3 +43,5 @@
  *                 to_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
+
+module.exports = router;

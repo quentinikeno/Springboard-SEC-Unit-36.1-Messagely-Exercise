@@ -24,21 +24,12 @@ class User {
 				400
 			);
 		}
-		const joinDate = new Date();
 		const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 		const results = await db.query(
 			`INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
         RETURNING username, first_name, last_name, phone`,
-			[
-				username,
-				hashedPassword,
-				first_name,
-				last_name,
-				phone,
-				joinDate,
-				joinDate,
-			]
+			[username, hashedPassword, first_name, last_name, phone]
 		);
 		const json = results.rows[0];
 		json.password = password;
@@ -67,14 +58,13 @@ class User {
 	/** Update last_login_at for user */
 
 	static async updateLoginTimestamp(username) {
-		const last_login_at = new Date();
 		const results = await db.query(
 			`
     UPDATE users
-    SET last_login_at=$1
-    WHERE username=$2
+    SET last_login_at=current_timestamp
+    WHERE username=$1
     RETURNING last_login_at`,
-			[last_login_at, username]
+			[username]
 		);
 		this.checkForUser(results);
 	}
